@@ -100,7 +100,6 @@ export async function askQuestion(
     } and considers the user's tech archetype and unique device characteristics.`
   const { text } = await generateText({
     model: google(`gemini-2.0-flash-exp`),
-    system: SYSTEM_INSTRUCTION,
     prompt,
   })
   return text
