@@ -37,3 +37,32 @@ export function generateComicComment(isp: string, networkType: string) {
 
   return comments[Math.floor(Math.random() * comments.length)]
 }
+
+export function getReturningUserMessage(
+  firstSeenAt?: string,
+  lastSeenAt?: string
+) {
+  if (!firstSeenAt || !lastSeenAt) {
+    return 'Welcome! This might be your first time here. 🎉'
+  }
+  const firstVisit = new Date(firstSeenAt)
+  const lastVisit = new Date(lastSeenAt)
+  const now = new Date()
+
+  const daysSinceFirstVisit = Math.floor(
+    (now.getTime() - firstVisit.getTime()) / (1000 * 60 * 60 * 24)
+  )
+  const hoursSinceLastVisit = Math.floor(
+    (now.getTime() - lastVisit.getTime()) / (1000 * 60 * 60)
+  )
+  if (hoursSinceLastVisit < 24) {
+    return "Frequent flyer detected! Can't stay away, huh? ✨"
+  }
+  if (hoursSinceLastVisit > 24 * 30) {
+    return "Wow, it's been a while! Long time no see! Missed us? 🤗"
+  }
+  if (daysSinceFirstVisit > 365) {
+    return `You've been visiting for over a year! Time flies, doesn't it? 🚀`
+  }
+  return 'Welcome back! Ready for another round?'
+}
