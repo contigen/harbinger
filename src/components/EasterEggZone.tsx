@@ -89,6 +89,7 @@ export default function EasterEggZone({
   useEffect(() => {
     const checkCharging = async () => {
       if ('getBattery' in navigator) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const battery = await (navigator as any).getBattery()
         setIsCharging(battery.charging)
 
