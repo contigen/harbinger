@@ -22,7 +22,7 @@ import {
 import { Fortune } from '&/types'
 
 interface ShareModalProps {
-  fortune: Fortune
+  fortune: Fortune | null
   fortuneImage: string | null
 }
 
@@ -34,7 +34,7 @@ export function ShareModal({ fortune, fortuneImage }: ShareModalProps) {
     return null
   }
 
-  const shareUrl = `https://harbinger.app/share?fortune=${encodeURIComponent(
+  const shareUrl = `${location.origin}?fortune=${encodeURIComponent(
     JSON.stringify(fortune)
   )}`
 
@@ -138,7 +138,7 @@ export function ShareModal({ fortune, fortuneImage }: ShareModalProps) {
             </Button>
           </div>
           <Button onClick={handleShare} className='w-full'>
-            {navigator.share ? 'Share Fortune' : 'Copy Link'}
+            {'share' in navigator ? 'Share Fortune' : 'Copy Link'}
           </Button>
           {fortuneImage && (
             <Button
