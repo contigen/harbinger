@@ -17,11 +17,12 @@ import html2canvas from 'html2canvas'
 import { Fortune, TDeviceMetrics } from '&/types'
 import { Spinner } from './ui/spinner'
 import { calculateRarityScore } from '&/lib/utils'
+import { useBatteryStatus } from '&/hooks/useBatteryStatus'
 
 interface AIFortuneAnalysisProps {
   deviceMetrics: TDeviceMetrics
   fortuneImage: string | null
-  setFortune: React.Dispatch<React.SetStateAction<Fortune>>
+  setFortune: React.Dispatch<React.SetStateAction<Fortune | null>>
   addToFortuneHistory: (fortune: Fortune) => void
   setFortuneImage: React.Dispatch<React.SetStateAction<string | null>>
 }
@@ -38,6 +39,7 @@ export default function AIFortuneAnalysis({
   const [isLoading, setIsLoading] = useState(false)
   const [isPending, setIsPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { charging } = useBatteryStatus()
 
   const isInitialMount = useRef(true)
   const prevDeviceMetrics = useRef(deviceMetrics)
@@ -65,7 +67,7 @@ export default function AIFortuneAnalysis({
       const fortuneResult = await generateFortune({
         ...deviceMetrics,
         rarityScore,
-        chargingStatus: true,
+        chargingStatus: !!charging,
         localTime: new Date().toLocaleString(),
       })
       const updatedFortuneResult = { ...fortuneResult, rarityScore }
@@ -77,7 +79,7 @@ export default function AIFortuneAnalysis({
     } finally {
       setIsLoading(false)
     }
-  }, [deviceMetrics, memoizedSetFortune, memoizedAddToFortuneHistory])
+  }, [deviceMetrics, charging, memoizedSetFortune, memoizedAddToFortuneHistory])
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -132,79 +134,89 @@ export default function AIFortuneAnalysis({
 
   return (
     <div className='space-y-6'>
-      <Card className='text-white bg-gradient-to-br from-indigo-500 to-purple-600'>
-        <CardHeader>
-          <CardTitle className='flex items-center text-2xl font-bold'>
-            <Cpu className='mr-2' />
-            Your Tech Archetype
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence mode='wait'>
-            {localFortune?.archetype && (
-              <motion.div
-                key={localFortune.archetype}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h3 className='mb-2 text-xl font-semibold'>
-                  {localFortune.archetype}
-                </h3>
-                <p className='text-sm opacity-90'>{localFortune.analysis}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <p className='inline-flex gap-1 text-white'>
+          <Spinner /> Getting Fortune
+        </p>
+      ) : (
+        <>
+          <Card className='text-white bg-gradient-to-br from-indigo-500 to-purple-600'>
+            <CardHeader>
+              <CardTitle className='flex items-center text-2xl font-bold'>
+                <Cpu className='mr-2' />
+                Your Tech Archetype
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AnimatePresence mode='wait'>
+                {localFortune?.archetype && (
+                  <motion.div
+                    key={localFortune.archetype}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <h3 className='mb-2 text-xl font-semibold'>
+                      {localFortune.archetype}
+                    </h3>
+                    <p className='text-sm opacity-90'>
+                      {localFortune.analysis}
+                    </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
 
-      <Card
-        className='text-white bg-gradient-to-br from-blue-500 to-teal-400'
-        ref={fortuneCardRef}
-      >
-        <CardHeader>
-          <CardTitle className='flex items-center text-2xl font-bold'>
-            <Sparkles className='mr-2' />
-            Your Tech Fortune
-          </CardTitle>
-          <CardDescription className='text-blue-100'>
-            AI Personality: {localFortune?.personality || 'Loading...'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AnimatePresence mode='wait'>
-            {localFortune && (
-              <motion.div
-                key={localFortune.header}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h3 className='mb-2 text-xl font-semibold'>
-                  {localFortune.header}
-                </h3>
-                <p className='mb-4 text-sm'>{localFortune.prediction}</p>
-                <div className='flex justify-between text-xs opacity-90'>
-                  <span>Lucky Tech Item: {localFortune.luckyTechItem}</span>
-                  <span>Lucky Tech Item: {localFortune.techAura}</span>
-                  <span>Tech Aura: {localFortune.techAuraColor}</span>
-                  <span>Rarity: {localFortune.rarityScore}</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {fortuneImage && (
-            <Button
-              onClick={handleDownload}
-              className='mt-4 text-blue-500 bg-white hover:bg-blue-100'
-            >
-              <Download className='mr-2 w-4 h-4' /> Download Fortune Card
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+          <Card
+            className='text-white bg-gradient-to-br from-blue-500 to-teal-400'
+            ref={fortuneCardRef}
+          >
+            <CardHeader>
+              <CardTitle className='flex items-center text-2xl font-bold'>
+                <Sparkles className='mr-2' />
+                Your Tech Fortune
+              </CardTitle>
+              <CardDescription className='text-blue-100'>
+                AI Personality: {localFortune?.personality || 'Loading...'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AnimatePresence mode='wait'>
+                {localFortune && (
+                  <motion.div
+                    key={localFortune.header}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <h3 className='mb-2 text-xl font-semibold'>
+                      {localFortune.header}
+                    </h3>
+                    <p className='mb-4 text-sm'>{localFortune.prediction}</p>
+                    <div className='flex justify-between text-xs opacity-90'>
+                      <span>Lucky Tech Item: {localFortune.luckyTechItem}</span>
+                      <span>Tech Aura: {localFortune.techAura}</span>
+                      <span>Tech Aura Color: {localFortune.techAuraColor}</span>
+                      <span>Rarity: {localFortune.rarityScore}</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {fortuneImage && (
+                <Button
+                  onClick={handleDownload}
+                  className='mt-4 text-blue-500 bg-white hover:bg-blue-100'
+                >
+                  <Download className='mr-2 w-4 h-4' /> Download Fortune Card
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       <Card>
         <CardHeader>
